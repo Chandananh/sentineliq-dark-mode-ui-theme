@@ -1,8 +1,22 @@
+import logging
+import os
 from flask import Flask, request, jsonify
 from services.groq_client import GroqClient
 
-app = Flask(__name__)
+# ✅ Create logs folder
+if not os.path.exists("logs"):
+    os.makedirs("logs")
 
+# ✅ Configure logging
+logging.basicConfig(
+    filename="logs/app.log",
+    level=logging.DEBUG,   # 👈 change INFO → DEBUG
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    filemode="a",
+    force=True             # 👈 VERY IMPORTANT (fixes issue)
+)
+logging.info("App started")
+app = Flask(__name__)
 client = GroqClient()
 
 
@@ -12,21 +26,36 @@ def home():
     return {"message": "AI Service is running"}
 
 
-# ✅ Main AI endpoint
-@app.route("/generate", methods=["POST"])
+# ✅ Main AI endpoint (safe + logging)
+@app.route("/generate", methods=["GET", "POST"])
 def generate():
-    data = request.get_json()
+    logging.info("Request received")
+
+    # Safe JSON handling (prevents crash)
+    data = request.get_json(silent=True)
+
+    # If opened in browser (GET)
+    if not data:
+        logging.warning("No JSON data received")
+        return jsonify({"message": "API is working"}), 200
 
     prompt = data.get("prompt")
 
     if not prompt:
+        logging.warning("Prompt missing")
         return jsonify({"error": "Prompt is required"}), 400
 
-    result = client.generate_response(prompt)
+    try:
+        result = client.generate_response(prompt)
+        logging.info("Response generated successfully")
+        return jsonify({"response": result})
 
-    return jsonify({"response": result})
+    except Exception as e:
+        logging.error(f"Error: {e}")
+        return jsonify({"error": "Internal server error"}), 500
 
-@app.after_request
+
+# ✅ Security headers
 @app.after_request
 def add_security_headers(response):
     response.headers["X-Content-Type-Options"] = "nosniff"
@@ -34,10 +63,17 @@ def add_security_headers(response):
     response.headers["X-XSS-Protection"] = "1; mode=block"
     response.headers["Content-Security-Policy"] = "default-src 'self'"
 
-    # ✅ REMOVE server header
+    # Remove server info
     response.headers.pop("Server", None)
 
     return response
+
+
+# ✅ Global error handler
+@app.errorhandler(Exception)
+def handle_exception(e):
+    logging.error(f"Unhandled Exception: {e}")
+    return jsonify({"error": "Something went wrong"}), 500
 # ✅ Run server
 if __name__ == "__main__":
-app.run(host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0", port=5000)
