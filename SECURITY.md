@@ -22,3 +22,21 @@
 ## Notes
 - API keys are stored securely using .env
 - .env file is excluded from GitHub using .gitignore
+
+## Day 9 Security Testing
+
+### Tests Performed
+
+* SQL Injection (`' OR 1=1 --`)
+* HTML Injection (`<script>alert('hack')</script>`)
+* Prompt Injection ("Ignore all instructions")
+
+### Results
+
+* Application did not crash
+* Inputs handled as normal text
+* No sensitive/system data exposed
+
+### Status
+
+Security verified successfully
