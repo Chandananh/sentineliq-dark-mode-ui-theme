@@ -1,0 +1,9 @@
+services:
+  ai-service:
+    build: ./ai-service
+    container_name: sentineliq-ai
+    ports:
+      - "5000:5000"
+    env_file:
+      - ./ai-service/.env
+    restart: always
