@@ -14,3 +14,13 @@
 * Confirmed stable responses without crashes
 * Health endpoint working successfully
 
+
+## Day 12 – Final Security & Cleanup
+
+* Re-tested SQL injection, HTML injection, and prompt injection
+* Verified stable API responses
+* Removed unnecessary debug code
+* Confirmed secure environment variable usage
+* Health endpoint verified successfully
+
+
